@@ -8,6 +8,56 @@ output:
 
 ## Loading and preprocessing the data
 
+1. Load `data.table` and `dplyr` packages for later data manipulation
+
+```{r echo=TRUE}
+if (!require(data.table)) {install.packages("data.table")}
+if (!require(dplyr)) {install.packages("dplyr")}
+```
+
+2. Download data file and extract the **.zip** file if not already present in **data/** directory
+3. Read **.csv** file using `data.table::fread` wrapping the output using the `%>%` operator which pipes the output first into a `data.table` object, then a `dplyr::tbl_dt` object.
+
+
+```{r} 
+if (!file.exists("data/activity.csv")) {
+    download.file(url = "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", 
+                  method = "curl", destfile = "data/temp.zip", quiet = TRUE)
+    unzip(zipfile = "data/temp.zip", exdir = "data")
+    file.remove("temp.zip")
+    }
+activity <- fread("data//activity.csv") %>%
+    data.table %>%
+    tbl_dt 
+```
+
+Next we alter the loaded table using dplyr's mutate function
+
+1. Convert date to integer-based IDate class from data.table package. Though not useful for this smaller data table, it can sort more quickly with very large data sets
+2. Likewise, ITime from the interval column. 
+    Interval <integer division> 100 gives the hours
+    Interval <modulo> 100 gives the minutes 
+3. The original interval column is dropped
+4. `date, time` is created as a data.table key, thereby accelerating any future access of the data.
+
+```{r}
+activity <- activity %>%
+    mutate(date=as.IDate(date),
+           time=as.ITime(
+               sprintf("%02d:%02d",
+                       interval %/% 100,
+                       interval  %% 100))) %>%
+    select(-interval)
+setkey(x = activity, date, time)
+```
+Now we have 
+```{r}
+tables()
+```
+Which looks like
+```{r}
+activity
+```
 
 
 ## What is mean total number of steps taken per day?

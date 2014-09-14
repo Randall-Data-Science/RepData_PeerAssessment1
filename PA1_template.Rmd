@@ -11,8 +11,9 @@ output:
 1. Load `data.table` and `dplyr` packages for later data manipulation
 
 ```{r echo=TRUE}
-if (!require(data.table)) {install.packages("data.table")}
-if (!require(dplyr)) {install.packages("dplyr")}
+if (!require(data.table)) {install.packages("data.table"); library(data.table)}
+if (!require(dplyr)) {install.packages("dplyr"); library(dplyr)}
+if (!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
 ```
 
 2. Download data file and extract the **.zip** file if not already present in **data/** directory
@@ -62,7 +63,52 @@ activity
 
 ## What is mean total number of steps taken per day?
 
+To summarize the data into total steps taken per day, we could drop all time intervals that include an NA
 
+```
+activity %>% filter(!is.na(steps)) %>% group_by(date) %>% summarise(sum(steps))
+```
+
+However, that completely drops some dates such as 2012-10-01 and 2012-11-01 which have no valid measurements. At this point in the assignment, rather than imputing missing values, we are *trying* to show the limitations of ignoring the NAs. One way to do this is to read the NAs as zeros which simply do not add to the sum of steps.
+
+```{r}
+activity <- activity %>% 
+    mutate(stepsZ = ifelse(test = is.na(steps), yes = 0, no = steps))
+#StepsZ = Steps with ZERO in place of NAs
+
+stepCounts <- activity %>% 
+    group_by(date) %>% 
+    summarise(stepsZ=sum(stepsZ))
+```
+
+Now, lets build a histogram of the data with ggplot2
+```{r}
+Zdata <- ggplot(data = stepCounts)
+tempHue <- 0.58
+    ColA.light <- hsv(h = tempHue, s = 0.4, v = 0.6, alpha = 0.4)
+    ColA.dark <- hsv(h = tempHue, s = 0.4, v = 0.4, alpha = 0.8)
+Zaes <- aes(x = stepsZ)
+Zgeom <- geom_histogram(fill=ColA.light, colour=ColA.dark, binwidth = 1000)
+meanStepsZ <- mean(stepCounts$stepsZ)
+medianStepsZ <- median(stepCounts$stepsZ)
+ZmeanAnnotation <- annotate("text", y = 7.5, x = meanStepsZ, align = "right", 
+                            label=sprintf("Mean: %.0f ", meanStepsZ),
+                            color=ColA.dark, hjust=1, size=4)
+ZmedianAnnotation <- annotate("text", y = 9, x = medianStepsZ, align = "right", 
+                            label=sprintf("Median: %.0f ", medianStepsZ),
+                            color=ColA.dark, hjust=1, size=4, border=1)
+Zmean <- geom_vline(xintercept=meanStepsZ, colour=ColA.dark, size=1.0, linetype="longdash")
+Zmedian <- geom_vline(xintercept=medianStepsZ, colour=ColA.dark, size=1.0, linetype="longdash")
+labels <- labs(title = "Distribution of Step Counts", x = "Cumulative Steps", y = "Count of Days")
+Zdata + Zaes + Zgeom + labels + 
+    Zmean + ZmeanAnnotation +
+    Zmedian + ZmedianAnnotation
+
+```
+
+**`r sprintf("%.0f", meanStepsZ)`** is the **mean** number of steps taken in a day, as calculated from data where NA is treated like no steps in that time period
+
+**`r sprintf("%.0f", medianStepsZ)`** is the **median**, using the same data
 
 ## What is the average daily activity pattern?
 

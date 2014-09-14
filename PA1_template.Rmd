@@ -73,12 +73,12 @@ However, that completely drops some dates such as 2012-10-01 and 2012-11-01 whic
 
 ```{r}
 activity <- activity %>% 
-    mutate(stepsZ = ifelse(test = is.na(steps), yes = 0, no = steps))
-#StepsZ = Steps with ZERO in place of NAs
+    mutate(stepsZeroNAs = ifelse(test = is.na(steps), yes = 0, no = steps))
+#stepsZeroNAs = Steps with ZERO in place of NAs
 
 stepCounts <- activity %>% 
     group_by(date) %>% 
-    summarise(stepsZ=sum(stepsZ))
+    summarise(stepsZeroNAs=sum(stepsZeroNAs))
 ```
 
 Now, lets build a histogram of the data with ggplot2
@@ -87,18 +87,18 @@ Zdata <- ggplot(data = stepCounts)
 tempHue <- 0.58
     ColA.light <- hsv(h = tempHue, s = 0.4, v = 0.6, alpha = 0.4)
     ColA.dark <- hsv(h = tempHue, s = 0.4, v = 0.4, alpha = 0.8)
-Zaes <- aes(x = stepsZ)
+Zaes <- aes(x = stepsZeroNAs)
 Zgeom <- geom_histogram(fill=ColA.light, colour=ColA.dark, binwidth = 1000)
-meanStepsZ <- mean(stepCounts$stepsZ)
-medianStepsZ <- median(stepCounts$stepsZ)
-ZmeanAnnotation <- annotate("text", y = 7.5, x = meanStepsZ, align = "right", 
-                            label=sprintf("Mean: %.0f ", meanStepsZ),
+meanstepsZeroNAs <- mean(stepCounts$stepsZeroNAs)
+medianstepsZeroNAs <- median(stepCounts$stepsZeroNAs)
+ZmeanAnnotation <- annotate("text", y = 7.5, x = meanstepsZeroNAs, align = "right", 
+                            label=sprintf("Mean: %.0f ", meanstepsZeroNAs),
                             color=ColA.dark, hjust=1, size=4)
-ZmedianAnnotation <- annotate("text", y = 9, x = medianStepsZ, align = "right", 
-                            label=sprintf("Median: %.0f ", medianStepsZ),
+ZmedianAnnotation <- annotate("text", y = 9, x = medianstepsZeroNAs, align = "right", 
+                            label=sprintf("Median: %.0f ", medianstepsZeroNAs),
                             color=ColA.dark, hjust=1, size=4, border=1)
-Zmean <- geom_vline(xintercept=meanStepsZ, colour=ColA.dark, size=1.0, linetype="longdash")
-Zmedian <- geom_vline(xintercept=medianStepsZ, colour=ColA.dark, size=1.0, linetype="longdash")
+Zmean <- geom_vline(xintercept=meanstepsZeroNAs, colour=ColA.dark, size=1.0, linetype="longdash")
+Zmedian <- geom_vline(xintercept=medianstepsZeroNAs, colour=ColA.dark, size=1.0, linetype="longdash")
 labels <- labs(title = "Distribution of Step Counts", x = "Cumulative Steps", y = "Count of Days")
 Zdata + Zaes + Zgeom + labels + 
     Zmean + ZmeanAnnotation +
@@ -106,15 +106,106 @@ Zdata + Zaes + Zgeom + labels +
 
 ```
 
-**`r sprintf("%.0f", meanStepsZ)`** is the **mean** number of steps taken in a day, as calculated from data where NA is treated like no steps in that time period
+**`r sprintf("%.0f", meanstepsZeroNAs)`** is the **mean** number of steps taken in a day, as calculated from data where NA is treated like no steps in that time period
 
-**`r sprintf("%.0f", medianStepsZ)`** is the **median**, using the same data
+**`r sprintf("%.0f", medianstepsZeroNAs)`** is the **median**, using the same data
 
 ## What is the average daily activity pattern?
 
+Now calculate typical daily pattern, with NAs ignored and with NAs treated as zero.
+```{r}
+dailyPattern <- activity %>%
+    group_by(time) %>% 
+    summarise(stepsZeroNAs=mean(stepsZeroNAs), 
+              stepsTypical=mean(steps, na.rm = TRUE))
+setkey(dailyPattern, time)
+```
+Then plot the data
+
+```{r}
+qplot(data = dailyPattern, y=stepsZeroNAs, x=time, geom="line", 
+      xlab="Time interval", ylab="Steps", main="Daily Pattern without Imputed Data")
+```
 
 
 ## Imputing missing values
+
+The original data set contained **```r sum(is.na(activity$steps))```** NAs, out of a total **```r length(activity$steps)```** observations.
+
+
+The typical number of steps at each time interval during the day was calculated in the previous section
+
+```
+dailyPattern <- activity %>%
+    group_by(time) %>% 
+    summarise(stepsZeroNAs=mean(stepsZeroNAs), 
+              stepsTypical=mean(steps, na.rm = TRUE))
+
+```
+
+This table can be used to impute typical values for the NAs in the original data set. It covers all time intervals during the day covered by the earlier method of turing NAs into zeroes:
+```{r}
+length(unique(dailyPattern$stepsTypical)) == length(unique(dailyPattern$stepsZeroNAs))
+```
+
+And, it contains no NAs:
+```{r}
+sum(is.na(length(unique(dailyPattern$stepsTypical))))
+```
+
+This table can be used to create a new column in the original data set that imputes missing values from the typical daily pattern where NA previously existed.
+
+
+```{r}
+activity <- activity %>% 
+    mutate(stepsTypical = ifelse(
+        test = is.na(steps), 
+        yes = dailyPattern[time==time, stepsTypical],
+        no = steps))
+```
+
+These new data can be plotted like before:
+
+
+```{r}
+
+stepCounts <- activity %>% 
+    group_by(date) %>% 
+    summarise(stepsZeroNAs=sum(stepsZeroNAs),
+              stepsImputed=sum(stepsTypical)) 
+
+
+Imp.data <- ggplot(data = stepCounts)
+tempHue <- 0.88
+    ColB.light <- hsv(h = tempHue, s = 0.4, v = 0.6, alpha = 0.4)
+    ColB.dark <- hsv(h = tempHue, s = 0.4, v = 0.4, alpha = 0.8)
+Imp.aes <- aes(x = stepsImputed)
+Imp.geom <- geom_histogram(fill=ColB.light, colour=ColB.dark, binwidth = 1000)
+meansteps <- mean(stepCounts$stepsImputed)
+mediansteps <- median(stepCounts$stepsImputed)
+Imp.meanAnnotation <- annotate("text", y = 5, x = meansteps, align = "right", 
+                            label=sprintf("Mean: %.0f ", meansteps),
+                            color=ColB.dark, hjust=1, size=4)
+Imp.medianAnnotation <- annotate("text", y = 6, x = mediansteps, align = "right", 
+                            label=sprintf("Median: %.0f ", mediansteps),
+                            color=ColB.dark, hjust=1, size=4, border=1)
+Imp.mean <- geom_vline(xintercept=meansteps, colour=ColB.dark, size=1.0, linetype="longdash")
+Imp.median <- geom_vline(xintercept=mediansteps, colour=ColB.dark, size=1.0, linetype="longdash")
+labels <- labs(title = "Distribution of Step Counts", x = "Cumulative Steps", y = "Count of Days")
+Imp.data + Imp.aes + Imp.geom + labels + 
+    Imp.mean + Imp.meanAnnotation +
+    Imp.median + Imp.medianAnnotation
+
+```
+```
+
+
+
+
+
+
+
+
 
 
 

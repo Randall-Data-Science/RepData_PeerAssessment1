@@ -56,8 +56,7 @@ activity <- activity %>%
            time=as.ITime(
                sprintf("%02d:%02d",
                        interval %/% 100,
-                       interval  %% 100))) %>%
-    select(-interval)
+                       interval  %% 100)))
 setkey(x = activity, date, time)
 ```
 Now we have 

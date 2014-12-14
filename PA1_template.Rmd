@@ -3,6 +3,7 @@ title: 'Reproducible Research: Peer Assessment 1'
 output:
   html_document:
     keep_md: yes
+  pdf_document: default
 ---
 
 
@@ -46,8 +47,7 @@ data sets
 2. Likewise, `ITime` from the `interval` column. 
   - `Interval <integer division> 100` gives the hours
   -  `Interval <modulo> 100` gives the minutes 
-3. The original interval column is dropped
-4. `date, time` is created as a data.table key, thereby accelerating any future 
+3. `date, time` is created as a data.table key, thereby accelerating any future 
 access of the data.
 
 ```{r}
@@ -79,7 +79,7 @@ intervals that include an NA
 activity %>% filter(!is.na(steps)) %>% group_by(date) %>% summarise(sum(steps))
 ```
 
-However, that completely drops some dates such as 2012-10-01 and 2012-11-01 
+However, that completely drops some dates, such as 2012-10-01 and 2012-11-01,
 which have no valid measurements. At this point in the assignment, rather than 
 imputing missing values, we are *trying* to show the limitations of ignoring 
 the NAs. One way to do this is to read the NAs as zeros which simply do not add 
@@ -95,33 +95,33 @@ stepCounts <- activity %>%
     summarise(stepsZeroNAs=sum(stepsZeroNAs))
 ```
 
-Now, lets build a histogram of the data with ggplot2
+Now, lets build a histogram of the data using ggplot2
 ```{r}
-Zdata <- ggplot(data = stepCounts)
-tempHue <- 0.58
-    ColA.light <- hsv(h = tempHue, s = 0.4, v = 0.6, alpha = 0.4)
-    ColA.dark <- hsv(h = tempHue, s = 0.4, v = 0.4, alpha = 0.8)
-Zaes <- aes(x = stepsZeroNAs)
-Zgeom <- geom_histogram(fill=ColA.light, colour=ColA.dark, binwidth = 1000)
-meanstepsZeroNAs <- mean(stepCounts$stepsZeroNAs)
+# color
+tempHue <- 0.58 
+ColA.light <- hsv(h = tempHue, s = 0.4, v = 0.6, alpha = 0.4)
+ColA.dark <- hsv(h = tempHue, s = 0.4, v = 0.4, alpha = 0.8)
+# mean and median
+meanstepsZeroNAs <- mean(stepCounts$stepsZeroNAs) 
 medianstepsZeroNAs <- median(stepCounts$stepsZeroNAs)
-ZmeanAnnotation <- annotate(
-  "text", y = 7.5, x = meanstepsZeroNAs, align = "right", hjust=1, size=4,
-  label=sprintf("Mean: %.0f ", meanstepsZeroNAs), color=ColA.dark)
-ZmedianAnnotation <- annotate(
-  "text", y = 9, x = medianstepsZeroNAs, align = "right", hjust=1, size=4, 
-  label=sprintf("Median: %.0f ", medianstepsZeroNAs), color=ColA.dark, border=1)
-Zmean <- geom_vline(
-  xintercept=meanstepsZeroNAs, colour=ColA.dark, size=1.0, linetype="longdash")
-Zmedian <- geom_vline(
-  xintercept=medianstepsZeroNAs, colour=ColA.dark, size=1.0, linetype="longdash")
-labels <- labs(
-  title = "Distribution of Step Counts", 
-  x = "Cumulative Steps", y = "Count of Days")
-Zdata + Zaes + Zgeom + labels + 
-    Zmean + ZmeanAnnotation +
-    Zmedian + ZmedianAnnotation
 
+dailySteps <- 
+  # choose data
+  ggplot(data = stepCounts) +
+  # aesthetics, one series => histogram
+  aes(x = stepsZeroNAs) +
+  # geometric details of histogram, including coloring
+  geom_histogram(fill=ColA.light, colour=ColA.dark, binwidth = 1000) +
+  # annotate mean and median values
+  geom_vline(xintercept=meanstepsZeroNAs, colour=ColA.dark, size=1.0, linetype="longdash") +
+  geom_vline(xintercept=medianstepsZeroNAs, colour=ColA.dark, size=1.0, linetype="longdash") +
+  # Add labels
+  labs(
+    title = "Distribution of Steps per Day", 
+    x = "Daily Total Steps", y = "Days Count")
+
+# execute the plot
+dailySteps
 ```
 
 **`r sprintf("%.0f", meanstepsZeroNAs)`** is the **mean** number of steps 
@@ -152,7 +152,6 @@ From this calculation, we can note that typically, the most active 5-minute
 interval during the day starts at:
 ```{r}
 dailyPattern[stepsZeroNAs==max(dailyPattern$stepsZeroNAs), time]
-
 ```
 
 ## Imputing missing values
@@ -197,35 +196,42 @@ activity <- activity %>%
 These new data can be plotted like before:
 
 ```{r}
-
+# add imputed data
 stepCounts <- activity %>% 
     group_by(date) %>% 
     summarise(stepsZeroNAs=sum(stepsZeroNAs),
               stepsImputed=sum(stepsTypical)) 
 
-Imp.data <- ggplot(data = stepCounts)
+# mean and median
+meanstepsImputed <- mean(stepCounts$stepsImputed)
+medianstepsImputed <- median(stepCounts$stepsImputed) 
+
+# new colors
 tempHue <- 0.88
     ColB.light <- hsv(h = tempHue, s = 0.4, v = 0.6, alpha = 0.4)
     ColB.dark <- hsv(h = tempHue, s = 0.4, v = 0.4, alpha = 0.8)
-Imp.aes <- aes(x = stepsImputed)
-Imp.geom <- geom_histogram(fill=ColB.light, colour=ColB.dark, binwidth = 1000)
-meansteps <- mean(stepCounts$stepsImputed)
-mediansteps <- median(stepCounts$stepsImputed)
-Imp.meanAnnotation <- annotate("text", y = 5, x = meansteps, align = "right", 
-                            label=sprintf("Mean: %.0f ", meansteps),
-                            color=ColB.dark, hjust=1, size=4)
-Imp.medianAnnotation <- annotate("text", y = 6, x = mediansteps, align = "right", 
-                            label=sprintf("Median: %.0f ", mediansteps),
-                            color=ColB.dark, hjust=1, size=4, border=1)
-Imp.mean <- geom_vline(xintercept=meansteps, colour=ColB.dark, 
-                       size=1.0, linetype="longdash")
-Imp.median <- geom_vline(xintercept=mediansteps, colour=ColB.dark, 
-                         size=1.0, linetype="longdash")
-labels <- labs(title = "Distribution of Step Counts", 
-               x = "Cumulative Steps", y = "Count of Days")
-Imp.data + Imp.aes + Imp.geom + labels + 
-    Imp.mean + Imp.meanAnnotation +
-    Imp.median + Imp.medianAnnotation
+
+# build the plot
+dailySteps.Imputed <- 
+  # choose data
+  ggplot(data = stepCounts) +
+  # aesthetics, one series => histogram
+  aes(x = stepsImputed) +
+  # geometric details of histogram, including coloring
+  geom_histogram(fill=ColB.light, colour=ColB.dark, binwidth = 1000) +
+  # annotate mean and median values
+  geom_vline(xintercept=meanstepsImputed, colour=ColB.dark, size=1.0, linetype="longdash") +
+  geom_vline(xintercept=medianstepsImputed, colour=ColB.dark, size=1.0, linetype="longdash") +
+  # Add labels
+  labs(
+    title = "Distribution of Steps per Day (With Imputed Data)", 
+    x = "Daily Total Steps", y = "Days Count")
+
+# execute the plot
+dailySteps.Imputed
+
+
+
 ```
 
 

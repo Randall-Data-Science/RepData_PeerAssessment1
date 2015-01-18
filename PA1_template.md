@@ -2,8 +2,8 @@
 
 ## Loading and preprocessing the data
 
-1. Load `data.table` and `dplyr` packages for later data manipulation, and
-`ggplot2` plus `scales` for plotting.
+1. Load `data.table` and `dplyr` packages for data manipulation, and `ggplot2` 
+plus `scales` for plotting.
 
 
 ```r
@@ -39,43 +39,36 @@ Next we alter the loaded table using `dplyr`'s mutate function
 1. Convert date to integer-based `IDate` class from `data.table` package. Though 
 not useful for this smaller data table, it can sort more quickly with very large 
 data sets
-2. Likewise, `ITime` from the `interval` column. 
+2. Likewise, `ITime` an integer time format is calculated from the `interval` column. 
   - `Interval <integer division> 100` gives the hours
-  -  `Interval <modulo> 100` gives the minutes 
+  - `Interval <modulo> 100` gives the minutes 
 3. `date, time` is created as a data.table key, thereby accelerating any future 
 access of the data.
 
 
 ```r
 activity <- activity %>%
-    mutate(date=as.IDate(date),
-           time=as.ITime(
-               sprintf("%02d:%02d",
-                       interval %/% 100,
-                       interval  %% 100)))
+    mutate(date=as.IDate(date), time=as.ITime(
+               sprintf("%02d:%02d", interval %/% 100, interval  %% 100)))
 setkey(x = activity, date, time)
 ```
-Now we have 
+
+Now "activity" looks like:
+
 
 ```r
-tables()
+str(activity)
 ```
 
 ```
-##      NAME                 NROW NCOL MB COLS                          
-## [1,] activity           17,568    4  1 steps,date,interval,time      
-## [2,] dailyPattern          288    3  1 time,stepsZeroNAs,stepsTypical
-## [3,] dailyPattern.split    576    4  1 time,weekday,time,steps       
-## [4,] stepCounts             61    3  1 date,stepsZeroNAs,stepsImputed
-##      KEY      
-## [1,] date,time
-## [2,] time     
-## [3,] time     
-## [4,] date     
-## Total: 4MB
+## Classes 'tbl_dt', 'tbl', 'data.table' and 'data.frame':	17568 obs. of  4 variables:
+##  $ steps   : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ date    : IDate, format: "2012-10-01" "2012-10-01" ...
+##  $ interval: int  0 5 10 15 20 25 30 35 40 45 ...
+##  $ time    :Class 'ITime'  int [1:17568] 0 300 600 900 1200 1500 1800 2100 2400 2700 ...
+##  - attr(*, ".internal.selfref")=<externalptr> 
+##  - attr(*, "sorted")= chr  "date" "time"
 ```
-
-Which looks like
 
 ```r
 head(activity)
@@ -91,7 +84,6 @@ head(activity)
 ## 6    NA 2012-10-01       25 00:25:00
 ```
 
-
 ## What is mean total number of steps taken per day?
 
 To summarize the data into total steps taken per day, we could drop all time 
@@ -103,7 +95,7 @@ activity %>% filter(!is.na(steps)) %>% group_by(date) %>% summarise(sum(steps))
 
 However, that completely drops some dates, such as 2012-10-01 and 2012-11-01,
 which have no valid measurements. At this point in the assignment, rather than 
-imputing missing values, we are *trying* to show the limitations of ignoring 
+imputing missing values, we are trying to show the limitations of ignoring 
 the NAs. One way to do this is to read the NAs as zeros which simply do not add 
 to the sum of steps.
 
@@ -148,7 +140,7 @@ dailySteps <-
 dailySteps
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-1-1.png) 
 
 **9354** is the **mean** number of steps 
 taken in a day, as calculated from data where NA is treated like no steps in 
@@ -172,11 +164,11 @@ Then plot the data
 
 ```r
 qplot(data = dailyPattern, y=stepsZeroNAs, x=time/3600, geom="line", 
-      xlim = c(0,24), xlab="Time Interval (hour)", ylab="Steps", 
+      xlim = c(0, 24), xlab="Time Interval (hour)", ylab="Steps", 
       main="Daily Pattern without Imputed Data")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-9-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-2-1.png) 
 
 From this calculation, we can note that typically, the most active 5-minute 
 interval during the day starts at:
@@ -278,7 +270,7 @@ dailySteps.Imputed <-
 dailySteps.Imputed
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-14-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-5-1.png) 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
@@ -305,7 +297,7 @@ ggplot(data = dailyPattern.split, aes(x = as.POSIXct(time), y = steps, color = w
     x = "Interval", y = "Steps per 5-minute Interval")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-15-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
 
 And, just for fun here is an additional plot of the data
 
@@ -319,7 +311,7 @@ ggplot(data = activity, aes(x = as.POSIXct(time), y = stepsTypical, colour = wee
     x = "Time of Day", y = "Steps per 5-minute Interval")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-16-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
 
 And, zooming in on the smoothed data
 
@@ -332,7 +324,7 @@ ggplot(data = activity,
        x = "Time of Day", y = "Steps per 5-minute Interval")
 ```
 
-![](PA1_template_files/figure-html/unnamed-chunk-17-1.png) 
+![](PA1_template_files/figure-html/unnamed-chunk-8-1.png) 
 
 ## Appendix A: Environment
 
@@ -352,24 +344,22 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] mgcv_1.8-3       nlme_3.1-118     scales_0.2.4     ggplot2_1.0.0   
+## [1] mgcv_1.8-4       nlme_3.1-119     scales_0.2.4     ggplot2_1.0.0   
 ## [5] dplyr_0.4.1      data.table_1.9.4
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] assertthat_0.1   chron_2.3-45     colorspace_1.2-4 DBI_0.3.1       
-##  [5] digest_0.6.4     evaluate_0.5.5   formatR_1.0      grid_3.1.2      
+##  [5] digest_0.6.8     evaluate_0.5.5   formatR_1.0      grid_3.1.2      
 ##  [9] gtable_0.1.2     htmltools_0.2.6  knitr_1.8        labeling_0.3    
-## [13] lattice_0.20-29  lazyeval_0.1.10  magrittr_1.5     MASS_7.3-35     
+## [13] lattice_0.20-29  lazyeval_0.1.10  magrittr_1.5     MASS_7.3-37     
 ## [17] Matrix_1.1-4     munsell_0.4.2    parallel_3.1.2   plyr_1.8.1      
-## [21] proto_0.3-10     Rcpp_0.11.3      reshape2_1.4     rmarkdown_0.3.10
+## [21] proto_0.3-10     Rcpp_0.11.3      reshape2_1.4.1   rmarkdown_0.4.2 
 ## [25] stringr_0.6.2    tools_3.1.2      yaml_2.1.13
 ```
 
 ## Appendix B: Notes on Selected R Packages
 
-### dplyr
-
-version 0.4.1 
+### dplyr 0.4.1 
 
 - summary https://github.com/hadley/dplyr/blob/v0.4.1/README.md
 - news https://github.com/hadley/dplyr/blob/v0.4.1/NEWS.md
@@ -391,9 +381,7 @@ any existing columns that are not specified to be output.
 functions like `aggregate()`, `*apply()`, `by()` and `subset()`
 
 
-### magrittr
-
-version 1.5
+### magrittr 1.5
 
 - overview https://github.com/smbache/magrittr/blob/v.1.5/README.md
 - vignettes http://cran.r-project.org/web/packages/magrittr/vignettes/magrittr.html
@@ -409,12 +397,14 @@ is equivalent to:
         upper() %>%
         order()
 
+### scales 0.2.4
 
+Required for ggplot2's `scale_x_dateime` http://docs.ggplot2.org/current/scale_datetime.html
 
+### tidyr 0.2.0 
 
-### tidyr
+- summary https://github.com/hadley/tidyr/blob/v0.2.0/README.md
+- source https://github.com/hadley/tidyr
+- CRAN http://cran.r-project.org/web/packages/tidyr/index.html
 
-version 0.2.0 summary https://github.com/hadley/tidyr/blob/v0.2.0/README.md
-
-source: http://cran.r-project.org/web/packages/dplyr
-
+**Tidyr** can be used to shape data. In database theory, such operation are equivalent to changing between different normal forms. Tidyr focuses around `gather()`, which makes wide tables tall, and `spread()` which makes tall tables wide.

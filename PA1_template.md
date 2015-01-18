@@ -1,6 +1,5 @@
 # Reproducible Research: Peer Assessment 1
 
-
 ## Loading and preprocessing the data
 
 1. Load `data.table` and `dplyr` packages for later data manipulation, and
@@ -312,8 +311,9 @@ And, just for fun here is an additional plot of the data
 
 ```r
 ggplot(data = activity, aes(x = as.POSIXct(time), y = stepsTypical, colour = weekday, fill = weekday)) + 
-  scale_x_datetime(breaks = date_breaks("2 hour"), labels = date_format("%l %p")) +
-  geom_smooth(level = 0.8) + geom_point(alpha=0.5, size=1, position = "jitter") +
+  scale_x_datetime(breaks = date_breaks("2 hour"), labels = date_format("%l %p")) + 
+  stat_smooth(method = "gam") +  geom_smooth(level = 0.8) + 
+  geom_point(alpha=0.5, size=1, position = "jitter") +
   labs(title = sprintf(
     "Distribution of Steps Taken \nby Time of Day \nWeekend vs. Weekdays"), 
     x = "Time of Day", y = "Steps per 5-minute Interval")
@@ -327,9 +327,94 @@ And, zooming in on the smoothed data
 ggplot(data = activity, 
        aes(x = as.POSIXct(time), y = stepsTypical, colour = weekday, fill = weekday)) + 
   scale_x_datetime(breaks = date_breaks("2 hour"), labels = date_format("%l %p")) +
-  geom_smooth(level = 0.6) +
+  stat_smooth(method = "gam") +  geom_smooth(level = 0.6) +
   labs(title = sprintf("Distribution of Steps Taken \nby Time of Day \nWeekend vs. Weekdays"), 
        x = "Time of Day", y = "Steps per 5-minute Interval")
 ```
 
 ![](PA1_template_files/figure-html/unnamed-chunk-17-1.png) 
+
+## Appendix A: Environment
+
+
+```r
+sessionInfo()
+```
+
+```
+## R version 3.1.2 (2014-10-31)
+## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## 
+## locale:
+## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+## [1] mgcv_1.8-3       nlme_3.1-118     scales_0.2.4     ggplot2_1.0.0   
+## [5] dplyr_0.4.1      data.table_1.9.4
+## 
+## loaded via a namespace (and not attached):
+##  [1] assertthat_0.1   chron_2.3-45     colorspace_1.2-4 DBI_0.3.1       
+##  [5] digest_0.6.4     evaluate_0.5.5   formatR_1.0      grid_3.1.2      
+##  [9] gtable_0.1.2     htmltools_0.2.6  knitr_1.8        labeling_0.3    
+## [13] lattice_0.20-29  lazyeval_0.1.10  magrittr_1.5     MASS_7.3-35     
+## [17] Matrix_1.1-4     munsell_0.4.2    parallel_3.1.2   plyr_1.8.1      
+## [21] proto_0.3-10     Rcpp_0.11.3      reshape2_1.4     rmarkdown_0.3.10
+## [25] stringr_0.6.2    tools_3.1.2      yaml_2.1.13
+```
+
+## Appendix B: Notes on Selected R Packages
+
+### dplyr
+
+version 0.4.1 
+
+- summary https://github.com/hadley/dplyr/blob/v0.4.1/README.md
+- news https://github.com/hadley/dplyr/blob/v0.4.1/NEWS.md
+
+**Dplyr** by Hadley Wickam builds upon the earlier `plyr` package for data 
+manipulation and shaping for analysis. Execution speed approaches that of 
+`data.table` with syntax patterns that are arguabley more consistent with 
+other R packages. Additionally, `dplyr` can serve as a wrapper around 
+`data.table` objects.
+
+Note that `dplyr` also automatically imports `magrittr`
+
+- `mutate()` - This function takes a data.frame or data.table in dplyr and adds 
+columns with values as specified. It leaves existing columns in place regardless 
+of whether they are specified. This is in contrast to `transmute()` which drops 
+any existing columns that are not specified to be output.
+
+- `group_by()` & `summarise()` - Replicate functinality found in base R 
+functions like `aggregate()`, `*apply()`, `by()` and `subset()`
+
+
+### magrittr
+
+version 1.5
+
+- overview https://github.com/smbache/magrittr/blob/v.1.5/README.md
+- vignettes http://cran.r-project.org/web/packages/magrittr/vignettes/magrittr.html
+
+**Magrittr** supplies a "forward pipe" operator `%>%` which is useful for 
+composing functions. The following two expressions:
+
+    order(upper(c("c", "b", "a")))
+
+is equivalent to:
+
+    c("c", "b", "a") %>%
+        upper() %>%
+        order()
+
+
+
+
+### tidyr
+
+version 0.2.0 summary https://github.com/hadley/tidyr/blob/v0.2.0/README.md
+
+source: http://cran.r-project.org/web/packages/dplyr
+

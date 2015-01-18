@@ -6,7 +6,6 @@ output:
   pdf_document: default
 ---
 
-
 ## Loading and preprocessing the data
 
 1. Load `data.table` and `dplyr` packages for later data manipulation, and
@@ -261,8 +260,9 @@ ggplot(data = dailyPattern.split, aes(x = as.POSIXct(time), y = steps, color = w
 And, just for fun here is an additional plot of the data
 ```{r fig.width=10, fig.height=8, message=FALSE, warning=FALSE}
 ggplot(data = activity, aes(x = as.POSIXct(time), y = stepsTypical, colour = weekday, fill = weekday)) + 
-  scale_x_datetime(breaks = date_breaks("2 hour"), labels = date_format("%l %p")) +
-  geom_smooth(level = 0.8) + geom_point(alpha=0.5, size=1, position = "jitter") +
+  scale_x_datetime(breaks = date_breaks("2 hour"), labels = date_format("%l %p")) + 
+  stat_smooth(method = "gam") +  geom_smooth(level = 0.8) + 
+  geom_point(alpha=0.5, size=1, position = "jitter") +
   labs(title = sprintf(
     "Distribution of Steps Taken \nby Time of Day \nWeekend vs. Weekdays"), 
     x = "Time of Day", y = "Steps per 5-minute Interval")
@@ -273,7 +273,67 @@ And, zooming in on the smoothed data
 ggplot(data = activity, 
        aes(x = as.POSIXct(time), y = stepsTypical, colour = weekday, fill = weekday)) + 
   scale_x_datetime(breaks = date_breaks("2 hour"), labels = date_format("%l %p")) +
-  geom_smooth(level = 0.6) +
+  stat_smooth(method = "gam") +  geom_smooth(level = 0.6) +
   labs(title = sprintf("Distribution of Steps Taken \nby Time of Day \nWeekend vs. Weekdays"), 
        x = "Time of Day", y = "Steps per 5-minute Interval")
 ```
+
+## Appendix A: Environment
+
+```{r}
+sessionInfo()
+```
+
+## Appendix B: Notes on Selected R Packages
+
+### dplyr
+
+version 0.4.1 
+
+- summary https://github.com/hadley/dplyr/blob/v0.4.1/README.md
+- news https://github.com/hadley/dplyr/blob/v0.4.1/NEWS.md
+
+**Dplyr** by Hadley Wickam builds upon the earlier `plyr` package for data 
+manipulation and shaping for analysis. Execution speed approaches that of 
+`data.table` with syntax patterns that are arguabley more consistent with 
+other R packages. Additionally, `dplyr` can serve as a wrapper around 
+`data.table` objects.
+
+Note that `dplyr` also automatically imports `magrittr`
+
+- `mutate()` - This function takes a data.frame or data.table in dplyr and adds 
+columns with values as specified. It leaves existing columns in place regardless 
+of whether they are specified. This is in contrast to `transmute()` which drops 
+any existing columns that are not specified to be output.
+
+- `group_by()` & `summarise()` - Replicate functinality found in base R 
+functions like `aggregate()`, `*apply()`, `by()` and `subset()`
+
+
+### magrittr
+
+version 1.5
+
+- overview https://github.com/smbache/magrittr/blob/v.1.5/README.md
+- vignettes http://cran.r-project.org/web/packages/magrittr/vignettes/magrittr.html
+
+**Magrittr** supplies a "forward pipe" operator `%>%` which is useful for 
+composing functions. The following two expressions:
+
+    order(upper(c("c", "b", "a")))
+
+is equivalent to:
+
+    c("c", "b", "a") %>%
+        upper() %>%
+        order()
+
+
+
+
+### tidyr
+
+version 0.2.0 summary https://github.com/hadley/tidyr/blob/v0.2.0/README.md
+
+source: http://cran.r-project.org/web/packages/dplyr
+

@@ -47,6 +47,7 @@
 \newcommand{\RegionMarkerTok}[1]{{#1}}
 \newcommand{\ErrorTok}[1]{\textbf{{#1}}}
 \newcommand{\NormalTok}[1]{{#1}}
+\usepackage{longtable,booktabs}
 \usepackage{graphicx}
 \makeatletter
 \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
@@ -77,6 +78,10 @@
 \setlength{\parskip}{6pt plus 2pt minus 1pt}
 \setlength{\emergencystretch}{3em}  % prevent overfull lines
 \setcounter{secnumdepth}{0}
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
 
 %%% Change title format to be more compact
 \usepackage{titling}
@@ -109,45 +114,66 @@ data}\label{loading-and-preprocessing-the-data}
 \def\labelenumi{\arabic{enumi}.}
 \itemsep1pt\parskip0pt\parsep0pt
 \item
-  Load \texttt{data.table} and \texttt{dplyr} packages for data
-  manipulation, and \texttt{ggplot2} plus \texttt{scales} for plotting.
+  Load packages for data manipulation, processing and presentation. For
+  more detailed explanation of the packages as well as any unusual
+  coding conventions please see Appendix B.
 \end{enumerate}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{if (!}\KeywordTok{require}\NormalTok{(data.table)) \{}\KeywordTok{install.packages}\NormalTok{(}\StringTok{"data.table"}\NormalTok{); }\KeywordTok{library}\NormalTok{(data.table)\}}
-\NormalTok{if (!}\KeywordTok{require}\NormalTok{(dplyr)) \{}\KeywordTok{install.packages}\NormalTok{(}\StringTok{"dplyr"}\NormalTok{); }\KeywordTok{library}\NormalTok{(dplyr)\}}
-\NormalTok{if (!}\KeywordTok{require}\NormalTok{(ggplot2)) \{}\KeywordTok{install.packages}\NormalTok{(}\StringTok{"ggplot2"}\NormalTok{); }\KeywordTok{library}\NormalTok{(ggplot2)\}}
-\NormalTok{if (!}\KeywordTok{require}\NormalTok{(scales)) \{}\KeywordTok{install.packages}\NormalTok{(}\StringTok{"scales"}\NormalTok{); }\KeywordTok{library}\NormalTok{(scales)\}}
+\KeywordTok{library}\NormalTok{(}\StringTok{"data.table"}\NormalTok{) }\CommentTok{# gives fast `fread()` and integer-based datetimes}
+\KeywordTok{library}\NormalTok{(}\StringTok{"dplyr"}\NormalTok{) }\CommentTok{# good data manipulation and wrapper around data.frames or data.tables}
+\KeywordTok{library}\NormalTok{(}\StringTok{"magrittr"}\NormalTok{) }\CommentTok{# facilitates function composition}
+\KeywordTok{library}\NormalTok{(}\StringTok{"ggplot2"}\NormalTok{) }\CommentTok{# data plots}
+\KeywordTok{library}\NormalTok{(}\StringTok{"scales"}\NormalTok{) }\CommentTok{# sets scalse for axes }
+\KeywordTok{library}\NormalTok{(}\StringTok{"knitr"}\NormalTok{) }\CommentTok{# explicit loading seems necessary for `kable()`}
 \end{Highlighting}
 \end{Shaded}
+
+Note that the order packages are loaded does matter. For example,
+\texttt{between()} resolves to \texttt{dplyr::between()} rather
+\texttt{data.table::between()}, though it would be possible to call the
+\texttt{data.table} function explicitly.
 
 \begin{enumerate}
 \def\labelenumi{\arabic{enumi}.}
 \setcounter{enumi}{1}
 \itemsep1pt\parskip0pt\parsep0pt
 \item
-  Download data file and extract the \textbf{.zip} file if not already
-  present in \textbf{data/} directory
-\item
-  Read \textbf{.csv} file using \texttt{data.table::fread} wrapping the
-  output using the \texttt{\%\textgreater{}\%} operator which pipes the
-  output first into a \texttt{data.table} object, then a
-  \texttt{dplyr::tbl\_dt} object.
+  Data come from:
 \end{enumerate}
+
+\begin{longtable}[c]{@{}ll@{}}
+\toprule
+Type & Notes\tabularnewline
+\midrule
+\endhead
+Remote URL &
+\url{https://d396qusza40orc.cloudfront.net/repdata\%2Fdata\%2Factivity.zip}\tabularnewline
+local zip & ./data/temp.zip\tabularnewline
+local csv & ./data/activity.csv\tabularnewline
+R object & dplyr::tbl\_dt\tabularnewline
+local .RData & ./data/activity.RData\tabularnewline
+\bottomrule
+\end{longtable}
+
+In reverse order (excluding the R object in RAM), local versions of the
+data are checked for availability before attempting to re-download
+remote or less native formats.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{if (!}\KeywordTok{file.exists}\NormalTok{(}\StringTok{"data/activity.csv"}\NormalTok{)) \{}
-    \KeywordTok{download.file}\NormalTok{(}\DataTypeTok{url =} 
-        \StringTok{"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"}\NormalTok{, }
-        \DataTypeTok{method =} \StringTok{"curl"}\NormalTok{, }\DataTypeTok{destfile =} \StringTok{"data/temp.zip"}\NormalTok{, }\DataTypeTok{quiet =} \OtherTok{TRUE}\NormalTok{)}
-    \KeywordTok{unzip}\NormalTok{(}\DataTypeTok{zipfile =} \StringTok{"data/temp.zip"}\NormalTok{, }\DataTypeTok{exdir =} \StringTok{"data"}\NormalTok{)}
-    \KeywordTok{file.remove}\NormalTok{(}\StringTok{"temp.zip"}\NormalTok{)}
-    \NormalTok{\}}
-\NormalTok{activity <-}\StringTok{ }\KeywordTok{fread}\NormalTok{(}\StringTok{"data//activity.csv"}\NormalTok{) %>%}
-\StringTok{    }\NormalTok{data.table %>%}
-\StringTok{    }\NormalTok{tbl_dt }
+\NormalTok{if (!}\KeywordTok{file.exists}\NormalTok{(}\StringTok{"data/activity.zip"}\NormalTok{)) \{}
+  \KeywordTok{download.file}\NormalTok{(}\DataTypeTok{url =} 
+    \StringTok{"https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"}\NormalTok{, }
+    \DataTypeTok{method =} \StringTok{"curl"}\NormalTok{, }\DataTypeTok{destfile =} \StringTok{"data/activity.zip"}\NormalTok{, }\DataTypeTok{quiet =} \OtherTok{TRUE}\NormalTok{)}
+\NormalTok{\}}
+
+\NormalTok{activity <-}\StringTok{ }\CommentTok{#pipe zip file through read.csv}
+\StringTok{  }\KeywordTok{unz}\NormalTok{(}\DataTypeTok{description =} \StringTok{"data/activity.zip"}\NormalTok{, }\DataTypeTok{filename =} \StringTok{"activity.csv"}\NormalTok{) %>%}\StringTok{ }
+\StringTok{  }\NormalTok{read.csv %>%}\StringTok{ }
+\StringTok{  }\NormalTok{data.table %>%}\StringTok{ }\CommentTok{# and convert to datatable in dplyr container}
+\StringTok{  }\NormalTok{tbl_dt }
 \end{Highlighting}
 \end{Shaded}
 
@@ -186,9 +212,9 @@ Next we alter the loaded table using \texttt{dplyr}'s mutate function
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{activity <-}\StringTok{ }\NormalTok{activity %>%}
+\NormalTok{activity %<>%}\StringTok{ }\CommentTok{# this operator pipes activity to mutate, AND modifies it in place}
 \StringTok{    }\KeywordTok{mutate}\NormalTok{(}\DataTypeTok{date=}\KeywordTok{as.IDate}\NormalTok{(date), }\DataTypeTok{time=}\KeywordTok{as.ITime}\NormalTok{(}
-               \KeywordTok{sprintf}\NormalTok{(}\StringTok{"%02d:%02d"}\NormalTok{, interval %/%}\StringTok{ }\DecValTok{100}\NormalTok{, interval  %%}\StringTok{ }\DecValTok{100}\NormalTok{)))}
+       \KeywordTok{sprintf}\NormalTok{(}\StringTok{"%02d:%02d"}\NormalTok{, interval %/%}\StringTok{ }\DecValTok{100}\NormalTok{, interval  %%}\StringTok{ }\DecValTok{100}\NormalTok{)))}
 \KeywordTok{setkey}\NormalTok{(}\DataTypeTok{x =} \NormalTok{activity, date, time)}
 \end{Highlighting}
 \end{Shaded}
@@ -502,8 +528,9 @@ And, zooming in on the smoothed data
 \end{Shaded}
 
 \begin{verbatim}
-## R version 3.1.2 (2014-10-31)
+## R version 3.1.3 (2015-03-09)
 ## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: OS X 10.10.2 (Yosemite)
 ## 
 ## locale:
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -512,17 +539,17 @@ And, zooming in on the smoothed data
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] mgcv_1.8-4       nlme_3.1-119     scales_0.2.4     ggplot2_1.0.0   
-## [5] dplyr_0.4.1      data.table_1.9.4
+## [1] mgcv_1.8-5       nlme_3.1-120     knitr_1.9        scales_0.2.4    
+## [5] ggplot2_1.0.0    magrittr_1.5     dplyr_0.4.1      data.table_1.9.4
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] assertthat_0.1   chron_2.3-45     colorspace_1.2-4 DBI_0.3.1       
-##  [5] digest_0.6.8     evaluate_0.5.5   formatR_1.0      grid_3.1.2      
-##  [9] gtable_0.1.2     htmltools_0.2.6  knitr_1.8        labeling_0.3    
-## [13] lattice_0.20-29  lazyeval_0.1.10  magrittr_1.5     MASS_7.3-37     
-## [17] Matrix_1.1-4     munsell_0.4.2    parallel_3.1.2   plyr_1.8.1      
-## [21] proto_0.3-10     Rcpp_0.11.3      reshape2_1.4.1   rmarkdown_0.4.2 
-## [25] stringr_0.6.2    tools_3.1.2      yaml_2.1.13
+##  [1] assertthat_0.1   chron_2.3-45     colorspace_1.2-6 DBI_0.3.1       
+##  [5] digest_0.6.8     evaluate_0.5.5   formatR_1.0      grid_3.1.3      
+##  [9] gtable_0.1.2     htmltools_0.2.6  labeling_0.3     lattice_0.20-30 
+## [13] lazyeval_0.1.10  MASS_7.3-39      Matrix_1.1-5     munsell_0.4.2   
+## [17] parallel_3.1.3   plyr_1.8.1       proto_0.3-10     Rcpp_0.11.5     
+## [21] reshape2_1.4.1   rmarkdown_0.5.1  stringr_0.6.2    tools_3.1.3     
+## [25] yaml_2.1.13
 \end{verbatim}
 
 \subsection{Appendix B: Notes on Selected R
@@ -545,7 +572,9 @@ arguabley more consistent with other R packages. Additionally,
 \texttt{dplyr} can serve as a wrapper around \texttt{data.table}
 objects.
 
-Note that \texttt{dplyr} also automatically imports \texttt{magrittr}
+Note that \texttt{dplyr} also automatically imports \texttt{magrittr},
+though it is a subset of the features without the
+\texttt{\%\textless{}\textgreater{}\%} operator, for example.
 
 \begin{itemize}
 \item
@@ -586,6 +615,61 @@ is equivalent to:
 c("c", "b", "a") %>%
     upper() %>%
     order()
+\end{verbatim}
+
+Additional examples:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{add}\NormalTok{(}\DecValTok{2}\NormalTok{, }\DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 5
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DecValTok{2} \NormalTok{%>%}\StringTok{ }\KeywordTok{add}\NormalTok{(}\DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 5
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x <-}\StringTok{ }\DecValTok{4}
+\NormalTok{x %>%}\StringTok{ }\KeywordTok{add}\NormalTok{(}\DecValTok{3}\NormalTok{) }\CommentTok{# value of x plus 3, x is not changed}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 7
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{x}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 4
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Like x <- x %>% add(3):}
+\NormalTok{x %<>%}\StringTok{ }\KeywordTok{add}\NormalTok{(}\DecValTok{3}\NormalTok{) }\CommentTok{# value of x plus 3, x IS changed.}
+\NormalTok{x}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 7
 \end{verbatim}
 
 \subsubsection{scales 0.2.4}\label{scales-0.2.4}

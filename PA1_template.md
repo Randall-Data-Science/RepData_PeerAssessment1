@@ -2,36 +2,51 @@
 
 ## Loading and preprocessing the data
 
-1. Load `data.table` and `dplyr` packages for data manipulation, and `ggplot2` 
-plus `scales` for plotting.
+1. Load packages for data manipulation, processing and presentation. For more detailed
+explanation of the packages as well as any unusual coding conventions please see 
+Appendix B.
 
 
 ```r
-if (!require(data.table)) {install.packages("data.table"); library(data.table)}
-if (!require(dplyr)) {install.packages("dplyr"); library(dplyr)}
-if (!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
-if (!require(scales)) {install.packages("scales"); library(scales)}
+library("data.table") # gives fast `fread()` and integer-based datetimes
+library("dplyr") # good data manipulation and wrapper around data.frames or data.tables
+library("magrittr") # facilitates function composition
+library("ggplot2") # data plots
+library("scales") # sets scalse for axes 
+library("knitr") # explicit loading seems necessary for `kable()`
 ```
 
-2. Download data file and extract the **.zip** file if not already present in 
-**data/** directory
-3. Read **.csv** file using `data.table::fread` wrapping the output using the 
-`%>%` operator which pipes the output first into a `data.table` object, then a 
-`dplyr::tbl_dt` object.
+Note that the order packages are loaded does matter. For example, `between()` resolves 
+to `dplyr::between()` rather `data.table::between()`, though it would be possible to 
+call the `data.table` function explicitly.
+
+2. Data come from:
+
+Type          Notes
+------------  -----
+Remote URL    https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip
+local zip     ./data/temp.zip
+local csv     ./data/activity.csv
+R object      dplyr::tbl_dt
+local .RData  ./data/activity.RData
+
+In reverse order (excluding the R object in RAM), local versions of the data are checked
+for availability before attempting to re-download remote or less native formats.
 
 
 
 ```r
-if (!file.exists("data/activity.csv")) {
-    download.file(url = 
-        "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", 
-        method = "curl", destfile = "data/temp.zip", quiet = TRUE)
-    unzip(zipfile = "data/temp.zip", exdir = "data")
-    file.remove("temp.zip")
-    }
-activity <- fread("data//activity.csv") %>%
-    data.table %>%
-    tbl_dt 
+if (!file.exists("data/activity.zip")) {
+  download.file(url = 
+    "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", 
+    method = "curl", destfile = "data/activity.zip", quiet = TRUE)
+}
+
+activity <- #pipe zip file through read.csv
+  unz(description = "data/activity.zip", filename = "activity.csv") %>% 
+  read.csv %>% 
+  data.table %>% # and convert to datatable in dplyr container
+  tbl_dt 
 ```
 
 Next we alter the loaded table using `dplyr`'s mutate function
@@ -47,9 +62,9 @@ access of the data.
 
 
 ```r
-activity <- activity %>%
+activity %<>% # this operator pipes activity to mutate, AND modifies it in place
     mutate(date=as.IDate(date), time=as.ITime(
-               sprintf("%02d:%02d", interval %/% 100, interval  %% 100)))
+       sprintf("%02d:%02d", interval %/% 100, interval  %% 100)))
 setkey(x = activity, date, time)
 ```
 
@@ -334,8 +349,9 @@ sessionInfo()
 ```
 
 ```
-## R version 3.1.2 (2014-10-31)
+## R version 3.1.3 (2015-03-09)
 ## Platform: x86_64-apple-darwin13.4.0 (64-bit)
+## Running under: OS X 10.10.2 (Yosemite)
 ## 
 ## locale:
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -344,17 +360,17 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] mgcv_1.8-4       nlme_3.1-119     scales_0.2.4     ggplot2_1.0.0   
-## [5] dplyr_0.4.1      data.table_1.9.4
+## [1] mgcv_1.8-5       nlme_3.1-120     knitr_1.9        scales_0.2.4    
+## [5] ggplot2_1.0.0    magrittr_1.5     dplyr_0.4.1      data.table_1.9.4
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] assertthat_0.1   chron_2.3-45     colorspace_1.2-4 DBI_0.3.1       
-##  [5] digest_0.6.8     evaluate_0.5.5   formatR_1.0      grid_3.1.2      
-##  [9] gtable_0.1.2     htmltools_0.2.6  knitr_1.8        labeling_0.3    
-## [13] lattice_0.20-29  lazyeval_0.1.10  magrittr_1.5     MASS_7.3-37     
-## [17] Matrix_1.1-4     munsell_0.4.2    parallel_3.1.2   plyr_1.8.1      
-## [21] proto_0.3-10     Rcpp_0.11.3      reshape2_1.4.1   rmarkdown_0.4.2 
-## [25] stringr_0.6.2    tools_3.1.2      yaml_2.1.13
+##  [1] assertthat_0.1   chron_2.3-45     colorspace_1.2-6 DBI_0.3.1       
+##  [5] digest_0.6.8     evaluate_0.5.5   formatR_1.0      grid_3.1.3      
+##  [9] gtable_0.1.2     htmltools_0.2.6  labeling_0.3     lattice_0.20-30 
+## [13] lazyeval_0.1.10  MASS_7.3-39      Matrix_1.1-5     munsell_0.4.2   
+## [17] parallel_3.1.3   plyr_1.8.1       proto_0.3-10     Rcpp_0.11.5     
+## [21] reshape2_1.4.1   rmarkdown_0.5.1  stringr_0.6.2    tools_3.1.3     
+## [25] yaml_2.1.13
 ```
 
 ## Appendix B: Notes on Selected R Packages
@@ -370,7 +386,8 @@ manipulation and shaping for analysis. Execution speed approaches that of
 other R packages. Additionally, `dplyr` can serve as a wrapper around 
 `data.table` objects.
 
-Note that `dplyr` also automatically imports `magrittr`
+Note that `dplyr` also automatically imports `magrittr`, though it is a subset of 
+the features without the `%<>%` operator, for example.
 
 - `mutate()` - This function takes a data.frame or data.table in dplyr and adds 
 columns with values as specified. It leaves existing columns in place regardless 
@@ -396,6 +413,53 @@ is equivalent to:
     c("c", "b", "a") %>%
         upper() %>%
         order()
+
+Additional examples:
+
+
+```r
+add(2, 3)
+```
+
+```
+## [1] 5
+```
+
+```r
+2 %>% add(3)
+```
+
+```
+## [1] 5
+```
+
+```r
+x <- 4
+x %>% add(3) # value of x plus 3, x is not changed
+```
+
+```
+## [1] 7
+```
+
+```r
+x
+```
+
+```
+## [1] 4
+```
+
+```r
+# Like x <- x %>% add(3):
+x %<>% add(3) # value of x plus 3, x IS changed.
+x
+```
+
+```
+## [1] 7
+```
+
 
 ### scales 0.2.4
 

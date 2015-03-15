@@ -1,45 +1,61 @@
 ---
 title: 'Reproducible Research: Peer Assessment 1'
 output:
+  html_document:
+    keep_md: yes
+    toc: yes
   pdf_document:
     keep_tex: yes
     latex_engine: xelatex
-    toc: yes
-  html_document:
-    keep_md: yes
     toc: yes
 ---
 
 ## Loading and preprocessing the data
 
-1. Load `data.table` and `dplyr` packages for data manipulation, and `ggplot2` 
-plus `scales` for plotting.
+1. Load packages for data manipulation, processing and presentation. For more detailed
+explanation of the packages as well as any unusual coding conventions please see 
+Appendix B.
 
 ```{r load packages, message=FALSE, warning=FALSE}
-if (!require(data.table)) {install.packages("data.table"); library(data.table)}
-if (!require(dplyr)) {install.packages("dplyr"); library(dplyr)}
-if (!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
-if (!require(scales)) {install.packages("scales"); library(scales)}
+library("data.table") # gives fast `fread()` and integer-based datetimes
+library("dplyr") # good data manipulation and wrapper around data.frames or data.tables
+library("magrittr") # facilitates function composition
+library("ggplot2") # data plots
+library("scales") # sets scalse for axes 
+library("knitr") # explicit loading seems necessary for `kable()`
 ```
 
-2. Download data file and extract the **.zip** file if not already present in 
-**data/** directory
-3. Read **.csv** file using `data.table::fread` wrapping the output using the 
-`%>%` operator which pipes the output first into a `data.table` object, then a 
-`dplyr::tbl_dt` object.
+Note that the order packages are loaded does matter. For example, `between()` resolves 
+to `dplyr::between()` rather `data.table::between()`, though it would be possible to 
+call the `data.table` function explicitly.
+
+2. Data come from:
+
+Type          Notes
+------------  -----
+Remote URL    https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip
+local zip     ./data/temp.zip
+local csv     ./data/activity.csv
+R object      dplyr::tbl_dt
+local .RData  ./data/activity.RData
+
+In reverse order (excluding the R object in RAM), local versions of the data are checked
+for availability before attempting to re-download remote or less native formats.
 
 
 ```{r download and read data} 
-if (!file.exists("data/activity.csv")) {
-    download.file(url = 
-        "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", 
-        method = "curl", destfile = "data/temp.zip", quiet = TRUE)
-    unzip(zipfile = "data/temp.zip", exdir = "data")
-    file.remove("temp.zip")
-    }
-activity <- fread("data//activity.csv") %>%
-    data.table %>%
-    tbl_dt 
+if (!file.exists("data/activity.zip")) {
+  download.file(url = 
+    "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip", 
+    method = "curl", destfile = "data/activity.zip", quiet = TRUE)
+}
+
+activity <- #pipe zip file through read.csv
+  unz(description = "data/activity.zip", filename = "activity.csv") %>% 
+  read.csv %>% 
+  data.table %>% # and convert to datatable in dplyr container
+  tbl_dt 
+
 ```
 
 Next we alter the loaded table using `dplyr`'s mutate function
@@ -54,9 +70,9 @@ data sets
 access of the data.
 
 ```{r add integer date and times}
-activity <- activity %>%
+activity %<>% # this operator pipes activity to mutate, AND modifies it in place
     mutate(date=as.IDate(date), time=as.ITime(
-               sprintf("%02d:%02d", interval %/% 100, interval  %% 100)))
+       sprintf("%02d:%02d", interval %/% 100, interval  %% 100)))
 setkey(x = activity, date, time)
 ```
 
@@ -295,7 +311,8 @@ manipulation and shaping for analysis. Execution speed approaches that of
 other R packages. Additionally, `dplyr` can serve as a wrapper around 
 `data.table` objects.
 
-Note that `dplyr` also automatically imports `magrittr`
+Note that `dplyr` also automatically imports `magrittr`, though it is a subset of 
+the features without the `%<>%` operator, for example.
 
 - `mutate()` - This function takes a data.frame or data.table in dplyr and adds 
 columns with values as specified. It leaves existing columns in place regardless 
@@ -321,6 +338,20 @@ is equivalent to:
     c("c", "b", "a") %>%
         upper() %>%
         order()
+
+Additional examples:
+
+```{r}
+add(2, 3)
+2 %>% add(3)
+x <- 4
+x %>% add(3) # value of x plus 3, x is not changed
+x
+# Like x <- x %>% add(3):
+x %<>% add(3) # value of x plus 3, x IS changed.
+x
+```
+
 
 ### scales 0.2.4
 

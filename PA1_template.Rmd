@@ -80,7 +80,7 @@ Now "activity" looks like:
 
 ```{r preview activity table}
 str(activity)
-head(activity)
+head(activity) %>% kable
 ```
 
 ## What is mean total number of steps taken per day?
@@ -150,7 +150,7 @@ Calculate typical daily pattern, with NAs ignored and with NAs treated as zero.
 dailyPattern <- activity %>%
     group_by(time) %>% 
     summarise(stepsZeroNAs=mean(stepsZeroNAs), 
-              stepsTypical=mean(steps, na.rm = TRUE))
+              stepsTypical=mean(steps, na.rm = TRUE), interval=mean(interval))
 setkey(dailyPattern, time)
 ```
 Then plot the data
@@ -164,7 +164,7 @@ qplot(data = dailyPattern, y=stepsZeroNAs, x=time/3600, geom="line",
 From this calculation, we can note that typically, the most active 5-minute 
 interval during the day starts at:
 ```{r most active time}
-dailyPattern[stepsZeroNAs==max(dailyPattern$stepsZeroNAs), time]
+dailyPattern[stepsZeroNAs==max(dailyPattern$stepsZeroNAs), interval, time] %>% kable
 ```
 
 ## Imputing missing values

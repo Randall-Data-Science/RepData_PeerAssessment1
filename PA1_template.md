@@ -86,18 +86,19 @@ str(activity)
 ```
 
 ```r
-head(activity)
+head(activity) %>% kable
 ```
 
-```
-##   steps       date interval     time
-## 1    NA 2012-10-01        0 00:00:00
-## 2    NA 2012-10-01        5 00:05:00
-## 3    NA 2012-10-01       10 00:10:00
-## 4    NA 2012-10-01       15 00:15:00
-## 5    NA 2012-10-01       20 00:20:00
-## 6    NA 2012-10-01       25 00:25:00
-```
+
+
+ steps  date          interval       time
+------  -----------  ---------  ---------
+    NA  2012-10-01           0   00:00:00
+    NA  2012-10-01           5   00:05:00
+    NA  2012-10-01          10   00:10:00
+    NA  2012-10-01          15   00:15:00
+    NA  2012-10-01          20   00:20:00
+    NA  2012-10-01          25   00:25:00
 
 ## What is mean total number of steps taken per day?
 
@@ -171,7 +172,7 @@ Calculate typical daily pattern, with NAs ignored and with NAs treated as zero.
 dailyPattern <- activity %>%
     group_by(time) %>% 
     summarise(stepsZeroNAs=mean(stepsZeroNAs), 
-              stepsTypical=mean(steps, na.rm = TRUE))
+              stepsTypical=mean(steps, na.rm = TRUE), interval=mean(interval))
 setkey(dailyPattern, time)
 ```
 Then plot the data
@@ -189,12 +190,12 @@ From this calculation, we can note that typically, the most active 5-minute
 interval during the day starts at:
 
 ```r
-dailyPattern[stepsZeroNAs==max(dailyPattern$stepsZeroNAs), time]
+dailyPattern[stepsZeroNAs==max(dailyPattern$stepsZeroNAs), interval, time] %>% kable
 ```
 
-```
-## [1] "08:35:00"
-```
+     time   interval
+---------  ---------
+ 08:35:00        835
 
 ## Imputing missing values
 
@@ -349,9 +350,9 @@ sessionInfo()
 ```
 
 ```
-## R version 3.1.3 (2015-03-09)
+## R version 3.2.0 (2015-04-16)
 ## Platform: x86_64-apple-darwin13.4.0 (64-bit)
-## Running under: OS X 10.10.2 (Yosemite)
+## Running under: OS X 10.10.3 (Yosemite)
 ## 
 ## locale:
 ## [1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
@@ -360,17 +361,17 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] mgcv_1.8-5       nlme_3.1-120     knitr_1.9        scales_0.2.4    
-## [5] ggplot2_1.0.0    magrittr_1.5     dplyr_0.4.1      data.table_1.9.4
+## [1] mgcv_1.8-6       nlme_3.1-120     knitr_1.10.5     scales_0.2.4    
+## [5] ggplot2_1.0.1    magrittr_1.5     dplyr_0.4.1      data.table_1.9.4
 ## 
 ## loaded via a namespace (and not attached):
-##  [1] assertthat_0.1   chron_2.3-45     colorspace_1.2-6 DBI_0.3.1       
-##  [5] digest_0.6.8     evaluate_0.5.5   formatR_1.0      grid_3.1.3      
-##  [9] gtable_0.1.2     htmltools_0.2.6  labeling_0.3     lattice_0.20-30 
-## [13] lazyeval_0.1.10  MASS_7.3-39      Matrix_1.1-5     munsell_0.4.2   
-## [17] parallel_3.1.3   plyr_1.8.1       proto_0.3-10     Rcpp_0.11.5     
-## [21] reshape2_1.4.1   rmarkdown_0.5.1  stringr_0.6.2    tools_3.1.3     
-## [25] yaml_2.1.13
+##  [1] Rcpp_0.11.6      MASS_7.3-40      munsell_0.4.2    lattice_0.20-31 
+##  [5] colorspace_1.2-6 highr_0.5        stringr_1.0.0    plyr_1.8.2      
+##  [9] tools_3.2.0      parallel_3.2.0   grid_3.2.0       gtable_0.1.2    
+## [13] DBI_0.3.1        htmltools_0.2.6  lazyeval_0.1.10  yaml_2.1.13     
+## [17] digest_0.6.8     assertthat_0.1   Matrix_1.2-0     reshape2_1.4.1  
+## [21] formatR_1.2      evaluate_0.7     rmarkdown_0.6.1  labeling_0.3    
+## [25] stringi_0.4-1    chron_2.3-45     proto_0.3-10
 ```
 
 ## Appendix B: Notes on Selected R Packages
